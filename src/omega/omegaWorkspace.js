@@ -48,6 +48,11 @@ export function initOmegaWorkspace() {
     #gev-omega-panel textarea{min-height:88px;resize:vertical}#gev-omega-panel button{background:#17364a;color:#e7f4ff;border:1px solid #3b657d;border-radius:5px;padding:8px 10px;cursor:pointer;font-size:11px;margin:3px 4px 3px 0}
     #gev-omega-panel button:hover{background:#20516a}#gev-omega-panel .muted{color:#8ea6b8;font-size:10px}#gev-omega-panel .case-list{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 12px}#gev-omega-panel .case-list button[aria-pressed=true]{border-color:#7bc7f2;background:#1d4055}
     #gev-omega-panel .omega-row{display:flex;gap:8px;align-items:center;justify-content:space-between}#gev-omega-panel a{color:#8bd0ff;overflow-wrap:anywhere}
+    #gev-omega-panel .omega-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 13px}
+    #gev-omega-panel .omega-stat{background:#132330;border:1px solid #29465b;border-radius:6px;padding:9px;min-width:0}
+    #gev-omega-panel .omega-stat strong{display:block;font:600 18px ui-monospace,monospace;color:#b8e4ff}
+    #gev-omega-panel .omega-stat span{display:block;color:#8ea6b8;font-size:9px;letter-spacing:.08em;margin-top:3px}
+    #gev-omega-panel .omega-latest{border-left:2px solid #477c9a;padding:5px 9px;margin:8px 0 12px;color:#b8cbd8;font-size:11px}
   `;
   document.head.append(style);
   const launcher = element('button', { id: 'gev-omega-launcher', type: 'button', 'aria-label': 'Open Omega analyst workspace' }, '◈ OMEGA WORKSPACE');
@@ -72,6 +77,24 @@ export function initOmegaWorkspace() {
       cases.unshift(item); activeId = item.id; persist();
     });
     panel.append(create);
+    // Workspace overview is calculated only from analyst-authored local case data.
+    const totalSources = cases.reduce((sum, item) => sum + (item.sources || []).length, 0);
+    const totalEvents = cases.reduce((sum, item) => sum + (item.timeline || []).length, 0);
+    const latestEvent = cases.flatMap((item) => (item.timeline || []).map((event) => ({ ...event, caseTitle: item.title })))
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+    const overview = element('div', { class: 'omega-overview', 'aria-label': 'Workspace summary' });
+    for (const [value, labelText] of [[String(cases.length), 'CASES'], [String(totalSources), 'SOURCES'], [String(totalEvents), 'TIMELINE EVENTS']]) {
+      const stat = element('div', { class: 'omega-stat' });
+      stat.append(element('strong', {}, value), element('span', {}, labelText));
+      overview.append(stat);
+    }
+    panel.append(overview);
+    if (latestEvent) {
+      const latest = element('div', { class: 'omega-latest' });
+      latest.append(element('strong', {}, 'LATEST RECORDED EVENT · ' + latestEvent.caseTitle));
+      latest.append(element('div', {}, latestEvent.title + ' · ' + new Date(latestEvent.occurredAt).toLocaleString()));
+      panel.append(latest);
+    }
     const list = element('div', { class: 'case-list' });
     for (const item of cases) {
       const choice = element('button', { type: 'button' }, item.title);

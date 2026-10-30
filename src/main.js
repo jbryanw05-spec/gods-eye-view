@@ -9,8 +9,8 @@ const application = createStandaloneApplication({
   allowQaRegistration: import.meta.env.DEV,
 });
 
-application.start().then(() => {
-  initOmegaWorkspace();
+application.start().then((components) => {
+  initOmegaWorkspace({ dataManager: components?.data?.dataManager });
 }).catch((error) => {
   console.error("God's Eye View initialization failed:", error);
   const loaderStatus = document.querySelector('#loading-screen .loader-status');

@@ -207,12 +207,13 @@ export function createApplicationTools({
     event.preventDefault();
     const command = String(textCommandInput?.value || '').trim();
     if (!command) return;
-    if (!voiceCommands.isActive()) {
+    const session = voiceCommands.session;
+    if (!session?.isActive()) {
       if (textCommandStatus) textCommandStatus.textContent = 'Turn on GEV MIC first, then send your text command.';
       return;
     }
     try {
-      const sent = voiceCommands.sendTextCommand(command);
+      const sent = session.sendText(command);
       if (sent === false) throw new Error('The AI session did not accept the command.');
       textCommandInput.value = '';
       if (textCommandStatus) textCommandStatus.textContent = 'Command sent to GEV AI.';

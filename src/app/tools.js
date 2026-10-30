@@ -200,6 +200,28 @@ export function createApplicationTools({
       delete window.__gevVoiceCommands;
   });
   debug.voiceCommands = voiceCommands;
+  const textCommandForm = document.getElementById('gev-text-command');
+  const textCommandInput = document.getElementById('gev-text-command-input');
+  const textCommandStatus = document.getElementById('gev-text-command-status');
+  const submitTextCommand = (event) => {
+    event.preventDefault();
+    const command = String(textCommandInput?.value || '').trim();
+    if (!command) return;
+    if (!voiceCommands.isActive()) {
+      if (textCommandStatus) textCommandStatus.textContent = 'Turn on GEV MIC first, then send your text command.';
+      return;
+    }
+    try {
+      const sent = voiceCommands.sendTextCommand(command);
+      if (sent === false) throw new Error('The AI session did not accept the command.');
+      textCommandInput.value = '';
+      if (textCommandStatus) textCommandStatus.textContent = 'Command sent to GEV AI.';
+    } catch (error) {
+      if (textCommandStatus) textCommandStatus.textContent = error?.message || 'Could not send command.';
+    }
+  };
+  textCommandForm?.addEventListener('submit', submitTextCommand);
+  defer(() => textCommandForm?.removeEventListener('submit', submitTextCommand));
   defer(
     installViews({
       shell: styleManager,

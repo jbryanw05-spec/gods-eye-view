@@ -26,7 +26,8 @@ export function createDefaultMapSources({
       : createKeylessTerrain,
   };
   return {
-    defaultId: googleTileset ? 'photoreal' : 'esri-imagery',
+    // Start with keyless OpenStreetMap so the globe remains usable when paid imagery credentials or upstream tiles fail.
+    defaultId: googleTileset ? 'photoreal' : 'osm',
     unknownId: 'photoreal',
     recoveryId: googleTileset ? 'photoreal' : null,
     state: { hasCesiumIonToken: hasIon },

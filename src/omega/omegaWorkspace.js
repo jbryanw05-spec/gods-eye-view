@@ -68,7 +68,7 @@ export function initOmegaWorkspace() {
     create.addEventListener('click', () => {
       const title = prompt('Case title');
       if (!title?.trim()) return;
-      const item = { id: crypto.randomUUID(), title: title.trim().slice(0, 120), createdAt: new Date().toISOString(), notes: '', sources: [] };
+      const item = { id: crypto.randomUUID(), title: title.trim().slice(0, 120), createdAt: new Date().toISOString(), notes: '', sources: [], timeline: [] };
       cases.unshift(item); activeId = item.id; persist();
     });
     panel.append(create);
@@ -113,6 +113,71 @@ export function initOmegaWorkspace() {
       sourceList.append(row);
     }
     panel.append(sourceList);
+    // Timestamped case timeline: entries are user-authored and never imply live verification.
+    current.timeline ||= [];
+    panel.append(element('label', {}, 'EVENT TIMELINE'));
+    const eventTitle = element('input', { type: 'text', placeholder: 'Event / observation title' });
+    const eventTime = element('input', { type: 'datetime-local' });
+    eventTime.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const eventType = element('select');
+    for (const [value, labelText] of [['observation', 'Observation'], ['report', 'Public report'], ['analysis', 'Analysis'], ['question', 'Open question']]) {
+      const option = element('option', { type: 'text' }, labelText);
+      option.value = value;
+      eventType.append(option);
+    }
+    const eventSource = element('select');
+    const noSource = element('option', {}, 'No linked source');
+    noSource.value = '';
+    eventSource.append(noSource);
+    for (let i = 0; i < (current.sources || []).length; i += 1) {
+      const source = current.sources[i];
+      const option = element('option', {}, source.label || source.url);
+      option.value = String(i);
+      eventSource.append(option);
+    }
+    const eventDetails = element('textarea', { placeholder: 'What happened? Include uncertainty and context…' });
+    eventDetails.maxLength = 1000;
+    const addEvent = element('button', { type: 'button' }, 'ADD TIMELINE EVENT');
+    addEvent.addEventListener('click', () => {
+      const titleText = eventTitle.value.trim();
+      if (!titleText) { alert('Enter an event title.'); return; }
+      const parsedTime = new Date(eventTime.value);
+      if (!eventTime.value || Number.isNaN(parsedTime.getTime())) { alert('Choose a valid event time.'); return; }
+      current.timeline.push({
+        id: crypto.randomUUID(),
+        title: titleText.slice(0, 160),
+        type: eventType.value,
+        occurredAt: parsedTime.toISOString(),
+        details: eventDetails.value.trim().slice(0, 1000),
+        sourceIndex: eventSource.value === '' ? null : Number(eventSource.value),
+        recordedAt: new Date().toISOString(),
+      });
+      current.timeline.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+      persist();
+    });
+    panel.append(eventTitle, eventTime, eventType, eventSource, eventDetails, addEvent);
+    const timelineList = element('ol');
+    for (const entry of current.timeline) {
+      const row = element('li');
+      const heading = element('strong', {}, entry.title + ' · ' + (entry.type || 'observation'));
+      const when = element('div', { class: 'muted' }, new Date(entry.occurredAt).toLocaleString());
+      row.append(heading, when);
+      if (entry.details) row.append(element('p', {}, entry.details));
+      if (Number.isInteger(entry.sourceIndex) && current.sources[entry.sourceIndex]) {
+        const source = current.sources[entry.sourceIndex];
+        const link = element('a', {}, '↗ ' + (source.label || source.url));
+        link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        row.append(link);
+      }
+      const removeEvent = element('button', { type: 'button' }, 'REMOVE');
+      removeEvent.addEventListener('click', () => {
+        current.timeline = current.timeline.filter((item) => item.id !== entry.id);
+        persist();
+      });
+      row.append(removeEvent);
+      timelineList.append(row);
+    }
+    panel.append(timelineList);
     const actions = element('div', { class: 'omega-row' });
     const exportButton = element('button', { type: 'button' }, 'EXPORT CASE JSON');
     exportButton.addEventListener('click', () => {

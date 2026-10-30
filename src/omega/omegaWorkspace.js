@@ -35,7 +35,7 @@ function element(tag, attrs = {}, text = '') {
 }
 
 /** A local-first analyst notebook. It stores user-authored notes and public source links only. */
-export function initOmegaWorkspace() {
+export function initOmegaWorkspace({ dataManager = null } = {}) {
   if (document.getElementById('gev-omega-launcher')) return () => {};
   let cases = readCases();
   let activeId = cases[0]?.id || null;
@@ -52,7 +52,7 @@ export function initOmegaWorkspace() {
     #gev-omega-panel .omega-stat{background:#132330;border:1px solid #29465b;border-radius:6px;padding:9px;min-width:0}
     #gev-omega-panel .omega-stat strong{display:block;font:600 18px ui-monospace,monospace;color:#b8e4ff}
     #gev-omega-panel .omega-stat span{display:block;color:#8ea6b8;font-size:9px;letter-spacing:.08em;margin-top:3px}
-    #gev-omega-panel .omega-latest{border-left:2px solid #477c9a;padding:5px 9px;margin:8px 0 12px;color:#b8cbd8;font-size:11px}
+    #gev-omega-panel .omega-latest{border-left:2px solid #477c9a;padding:5px 9px;margin:8px 0 12px;color:#b8cbd8;font-size:11px}\n    #gev-omega-panel .omega-health{border-top:1px solid #29465b;margin-top:12px;padding-top:10px}\n    #gev-omega-panel .omega-health-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:7px 0;border-bottom:1px solid #1c2d3b}\n    #gev-omega-panel .omega-health-name{font-size:11px;color:#d7e9f5;overflow-wrap:anywhere}\n    #gev-omega-panel .omega-health-meta{font-size:10px;color:#8ea6b8;margin-top:2px}\n    #gev-omega-panel .omega-health-state{font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:#a9c9dc;white-space:nowrap}\n    #gev-omega-panel .omega-health-state[data-state=error],#gev-omega-panel .omega-health-state[data-state=unavailable]{color:#ffad9f}\n    #gev-omega-panel .omega-health-state[data-state=refreshing],#gev-omega-panel .omega-health-state[data-state=loading]{color:#f0d28b}
   `;
   document.head.append(style);
   const launcher = element('button', { id: 'gev-omega-launcher', type: 'button', 'aria-label': 'Open Omega analyst workspace' }, '◈ OMEGA WORKSPACE');
@@ -94,6 +94,39 @@ export function initOmegaWorkspace() {
       latest.append(element('strong', {}, 'LATEST RECORDED EVENT · ' + latestEvent.caseTitle));
       latest.append(element('div', {}, latestEvent.title + ' · ' + new Date(latestEvent.occurredAt).toLocaleString()));
       panel.append(latest);
+    }
+    if (dataManager?.getAll) {
+      const health = element('section', { class: 'omega-health', 'aria-label': 'Live data source health' });
+      health.append(element('strong', {}, 'LIVE DATA LAYER HEALTH'));
+      health.append(element('p', {}, 'Status is read from the application’s actual layer lifecycle and provider statistics. Unknown timestamps remain unknown.'));
+      const layers = dataManager.getAll();
+      const visibleLayers = layers.filter((layer) => layer.enabled || layer.stats?.error || layer.stats?.managerRefreshError || layer.stats?.sourceUnavailable);
+      if (!visibleLayers.length) {
+        health.append(element('div', { class: 'omega-health-meta' }, 'No data layers are currently enabled.'));
+      }
+      for (const layer of visibleLayers.slice(0, 16)) {
+        const stats = layer.stats || {};
+        const state = stats.sourceUnavailable || stats.status === 'unavailable' ? 'unavailable'
+          : stats.error || stats.managerRefreshError ? 'error'
+          : stats.refreshing ? 'refreshing'
+          : stats.loading || layer.lifecycleState === 'enabling' ? 'loading'
+          : layer.enabled ? 'active' : 'off';
+        const row = element('div', { class: 'omega-health-row' });
+        const detail = element('div');
+        detail.append(element('div', { class: 'omega-health-name' }, layer.name || layer.id));
+        const timestamp = stats.lastUpdate ? new Date(stats.lastUpdate) : null;
+        const freshness = timestamp && !Number.isNaN(timestamp.getTime())
+          ? 'Last update ' + timestamp.toLocaleString()
+          : 'Last update time not reported';
+        const count = Number.isFinite(Number(stats.count)) ? ' · ' + Number(stats.count).toLocaleString() + ' records' : '';
+        detail.append(element('div', { class: 'omega-health-meta' }, freshness + count));
+        const status = element('span', { class: 'omega-health-state' }, state.toUpperCase());
+        status.dataset.state = state;
+        row.append(detail, status);
+        health.append(row);
+      }
+      if (visibleLayers.length > 16) health.append(element('div', { class: 'omega-health-meta' }, 'Showing 16 of ' + visibleLayers.length + ' enabled or degraded layers.'));
+      panel.append(health);
     }
     const list = element('div', { class: 'case-list' });
     for (const item of cases) {
@@ -218,6 +251,7 @@ export function initOmegaWorkspace() {
     panel.append(element('p', { class: 'muted' }, 'Sources are user-added links, not verified endorsements. This notebook does not identify or track private individuals.'));
   }
   launcher.addEventListener('click', () => { panel.classList.toggle('open'); render(); });
+  const unsubscribeData = dataManager?.subscribe?.(() => { if (panel.classList.contains('open')) render(); });
   render();
-  return () => { launcher.remove(); panel.remove(); style.remove(); };
+  return () => { unsubscribeData?.(); launcher.remove(); panel.remove(); style.remove(); };
 }

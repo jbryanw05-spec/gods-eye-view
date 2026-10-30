@@ -52,7 +52,14 @@ export function initOmegaWorkspace({ dataManager = null } = {}) {
     #gev-omega-panel .omega-stat{background:#132330;border:1px solid #29465b;border-radius:6px;padding:9px;min-width:0}
     #gev-omega-panel .omega-stat strong{display:block;font:600 18px ui-monospace,monospace;color:#b8e4ff}
     #gev-omega-panel .omega-stat span{display:block;color:#8ea6b8;font-size:9px;letter-spacing:.08em;margin-top:3px}
-    #gev-omega-panel .omega-latest{border-left:2px solid #477c9a;padding:5px 9px;margin:8px 0 12px;color:#b8cbd8;font-size:11px}\n    #gev-omega-panel .omega-health{border-top:1px solid #29465b;margin-top:12px;padding-top:10px}\n    #gev-omega-panel .omega-health-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:7px 0;border-bottom:1px solid #1c2d3b}\n    #gev-omega-panel .omega-health-name{font-size:11px;color:#d7e9f5;overflow-wrap:anywhere}\n    #gev-omega-panel .omega-health-meta{font-size:10px;color:#8ea6b8;margin-top:2px}\n    #gev-omega-panel .omega-health-state{font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:#a9c9dc;white-space:nowrap}\n    #gev-omega-panel .omega-health-state[data-state=error],#gev-omega-panel .omega-health-state[data-state=unavailable]{color:#ffad9f}\n    #gev-omega-panel .omega-health-state[data-state=refreshing],#gev-omega-panel .omega-health-state[data-state=loading]{color:#f0d28b}
+    #gev-omega-panel .omega-latest{border-left:2px solid #477c9a;padding:5px 9px;margin:8px 0 12px;color:#b8cbd8;font-size:11px}
+    #gev-omega-panel .omega-health{border-top:1px solid #29465b;margin-top:12px;padding-top:10px}
+    #gev-omega-panel .omega-health-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:7px 0;border-bottom:1px solid #1c2d3b}
+    #gev-omega-panel .omega-health-name{font-size:11px;color:#d7e9f5;overflow-wrap:anywhere}
+    #gev-omega-panel .omega-health-meta{font-size:10px;color:#8ea6b8;margin-top:2px}
+    #gev-omega-panel .omega-health-state{font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:#a9c9dc;white-space:nowrap}
+    #gev-omega-panel .omega-health-state[data-state=error],#gev-omega-panel .omega-health-state[data-state=unavailable]{color:#ffad9f}
+    #gev-omega-panel .omega-health-state[data-state=refreshing],#gev-omega-panel .omega-health-state[data-state=loading]{color:#f0d28b}
   `;
   document.head.append(style);
   const launcher = element('button', { id: 'gev-omega-launcher', type: 'button', 'aria-label': 'Open Omega analyst workspace' }, '◈ OMEGA WORKSPACE');
